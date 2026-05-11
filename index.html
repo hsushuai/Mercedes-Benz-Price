@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="奔驰落地价">
+  <title>奔驰落地价计算器</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg: #111;
+      --card: #1c1c1e;
+      --card2: #2c2c2e;
+      --border: #3a3a3c;
+      --text: #f5f5f5;
+      --sub: #8e8e93;
+      --gold: #d4a847;
+      --gold-light: #f0c060;
+      --green: #30d158;
+      --red: #ff453a;
+      --blue: #0a84ff;
+      --radius: 13px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, 'SF Pro Display', 'PingFang SC', sans-serif;
+      min-height: 100vh;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* ── 顶部 Header ── */
+    .header {
+      background: #000;
+      padding: 52px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+      position: relative;
+    }
+    .header-logo {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+    .header-titles { display: flex; flex-direction: column; }
+    .header-sub {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--sub);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .header-model {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .header-price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .header-price-label { font-size: 13px; color: var(--sub); }
+    .header-price-value { font-size: 18px; font-weight: 600; color: var(--gold); }
+
+    .edit-model-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: var(--card2);
+      color: var(--sub);
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    .edit-model-btn:active { background: var(--border); }
+
+    /* ── Tab 切换 ── */
+    .tab-bar {
+      display: flex;
+      background: #000;
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--sub);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--gold-light);
+      border-bottom-color: var(--gold-light);
+    }
+
+    /* ── 内容区 ── */
+    .content {
+      padding: 16px;
+      padding-bottom: 220px;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .section-label {
+      font-size: 12px;
+      color: var(--sub);
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      margin-left: 4px;
+    }
+
+    /* ── 输入卡片 ── */
+    .input-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .input-row {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .input-row:last-child { border-bottom: none; }
+
+    .input-row label {
+      font-size: 15px;
+      color: var(--text);
+      flex-shrink: 0;
+      width: 80px;
+    }
+    .input-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .yuan { font-size: 15px; color: var(--sub); }
+    input[type="number"], input[type="text"] {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 17px;
+      font-weight: 500;
+      text-align: right;
+      width: 130px;
+      font-family: inherit;
+      -webkit-appearance: none;
+    }
+    input[type="number"]::placeholder,
+    input[type="text"]::placeholder { color: var(--border); }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    .input-hint {
+      font-size: 11px;
+      margin-top: 3px;
+      height: 14px;
+    }
+    .hint-green { color: var(--green); }
+    .hint-sub { color: var(--sub); }
+
+    /* 购置税只读行 */
+    .readonly-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .readonly-row:last-child { border-bottom: none; }
+    .readonly-label {
+      font-size: 15px;
+      color: var(--sub);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .readonly-label .badge {
+      font-size: 10px;
+      background: var(--card2);
+      color: var(--sub);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .readonly-value { font-size: 16px; color: var(--text); font-weight: 500; }
+
+    /* ── 贷款开关卡片 ── */
+    .loan-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+    .loan-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .loan-label { font-size: 15px; color: var(--text); }
+    .loan-note {
+      font-size: 12px;
+      color: var(--gold);
+      margin-top: 8px;
+      line-height: 1.5;
+      display: none;
+    }
+    .loan-note.show { display: block; }
+
+    /* iOS 风格 Toggle */
+    .toggle { position: relative; display: inline-block; width: 51px; height: 31px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: var(--border);
+      border-radius: 31px;
+      transition: background 0.2s;
+    }
+    .toggle input:checked + .toggle-track { background: var(--green); }
+    .toggle-thumb {
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 27px; height: 27px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
+
+    /* ── 保存按钮 ── */
+    .save-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--gold);
+      color: #000;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: opacity 0.15s;
+    }
+    .save-btn:active { opacity: 0.75; }
+
+    /* ── 报价记录 ── */
+    .quotes-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .clear-all-btn {
+      font-size: 13px;
+      color: var(--red);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+
+    .quote-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .quote-card.best { border: 1px solid var(--gold); }
+
+    .quote-group { margin-bottom: 24px; }
+    .quote-group-header {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .quote-group-header span {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--sub);
+      margin-left: 8px;
+    }
+    .quote-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 14px 16px 10px;
+    }
+    .quote-name-row { display: flex; align-items: center; gap: 8px; }
+    .quote-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .best-badge {
+      font-size: 10px;
+      background: var(--gold);
+      color: #000;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 700;
+      display: none;
+    }
+    .quote-card.best .best-badge { display: inline-block; }
+
+    .quote-total {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--gold-light);
+    }
+    .quote-date {
+      font-size: 11px;
+      color: var(--sub);
+      margin-top: 2px;
+      text-align: right;
+    }
+
+    .quote-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+    }
+    .quote-detail-item {
+      background: var(--card);
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .quote-detail-label { font-size: 10px; color: var(--sub); margin-bottom: 2px; }
+    .quote-detail-value { font-size: 13px; color: var(--text); font-weight: 500; }
+    .quote-detail-value.discount { color: var(--green); }
+
+    .quote-actions {
+      display: flex;
+      border-top: 1px solid var(--border);
+    }
+    .quote-action-btn {
+      flex: 1;
+      padding: 10px;
+      font-size: 13px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--blue);
+      border-right: 1px solid var(--border);
+    }
+    .quote-action-btn:last-child { border-right: none; color: var(--red); }
+    .quote-action-btn:active { background: var(--card2); }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--sub);
+      font-size: 14px;
+      line-height: 2;
+    }
+    .empty-icon { font-size: 36px; margin-bottom: 8px; }
+
+    /* ── 弹窗 ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: flex-end;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--card);
+      border-radius: 20px 20px 0 0;
+      padding: 24px 20px;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom));
+      width: 100%;
+      animation: slideUp 0.25s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .modal-input {
+      width: 100%;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 16px;
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      margin-bottom: 12px;
+    }
+    .modal-input:focus { border-color: var(--gold); }
+    .modal-btns { display: flex; gap: 10px; }
+    .modal-btn {
+      flex: 1;
+      padding: 13px;
+      border-radius: 10px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .modal-btn.cancel { background: var(--card2); color: var(--text); }
+    .modal-btn.confirm { background: var(--gold); color: #000; }
+    .modal-btn:active { opacity: 0.8; }
+
+    .model-list {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      background: var(--card2);
+      border-radius: 10px;
+    }
+    .model-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .model-item:last-child { border-bottom: none; }
+    .model-item:active { background: var(--border); }
+    .model-item-info { display: flex; flex-direction: column; }
+    .model-item-name { font-size: 15px; color: var(--text); }
+    .model-item-price { font-size: 12px; color: var(--sub); margin-top: 2px; }
+    .model-item-badge {
+      font-size: 10px;
+      background: var(--border);
+      color: var(--sub);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .model-item-delete {
+      color: var(--red);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 5px;
+      display: none; /* Initially hidden */
+    }
+    .model-item.custom .model-item-delete {
+      display: block; /* Show for custom models */
+    }
+    .model-item.custom .model-item-badge {
+      background: var(--blue);
+      color: var(--text);
+    }
+
+    /* ── 底部结果栏 ── */
+    .result-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(10,10,10,0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      padding: 14px 20px;
+      padding-bottom: calc(14px + env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px 12px;
+      margin-bottom: 10px;
+    }
+    .result-item {
+      font-size: 12px;
+      color: var(--sub);
+      display: flex;
+      justify-content: space-between;
+    }
+    .result-item span:last-child { color: var(--text); }
+    .result-item.loan-item { color: var(--gold); }
+    .result-item.loan-item span:last-child { color: var(--gold-light); }
+
+    .result-divider {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 10px;
+    }
+    .result-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .result-total-label {
+      font-size: 14px;
+      color: var(--sub);
+    }
+    .result-total-value {
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--gold-light);
+      letter-spacing: -0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <img class="header-logo" src="data:image/png;base64,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" alt="Mercedes-Benz">
+      <div class="header-titles">
+        <div class="header-sub">Mercedes-Benz</div>
+        <div class="header-model">C260L 运动版</div>
+        <button class="edit-model-btn" onclick="openModelModal()">自定义</button>
+      </div>
+    </div>
+    <div class="header-price-row">
+      <span class="header-price-label">官方指导价</span>
+      <span class="header-price-value">¥324,600</span>
+    </div>
+  </div>
+
+  <!-- 自定义车型弹窗 -->
+  <div class="modal-overlay" id="modelModal" onclick="closeModelModal(event)">
+    <div class="modal">
+      <div class="modal-title">自定义车型</div>
+      <div id="modelListContainer" class="model-list"></div>
+      <input class="modal-input" type="text" id="modalModelName" placeholder="车型名称（如：E300L 豪华）" maxlength="20">
+      <input class="modal-input" type="number" id="modalModelPrice" placeholder="官方指导价（元）" inputmode="decimal">
+      <div class="modal-btns">
+        <button class="modal-btn cancel" onclick="closeModelModal()">取消</button>
+        <button class="modal-btn confirm" onclick="saveModel()">保存并使用</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 切换 -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('calc')">价格计算</button>
+    <button class="tab-btn" onclick="switchTab('quotes')">报价记录 <span id="quote-count"></span></button>
+  </div>
+
+  <!-- 内容 -->
+  <div class="content">
+
+    <!-- ── 计算 Tab ── -->
+    <div class="tab-panel active" id="panel-calc">
+
+      <!-- 隐藏域，用于存储当前编辑的 quote id -->
+      <input type="hidden" id="currentQuoteId">
+
+      <div class="section-label">费用输入</div>
+
+      <div class="input-card">
+        <!-- 4S店名称 -->
+        <div class="input-row">
+          <label for="dealerName">4S 店</label>
+          <div class="input-right">
+            <div class="input-wrap">
+              <input type="text" id="dealerName" placeholder="填写店名（可选）" style="font-size:15px;font-weight:400;">
+            </div>
+          </div>
+        </div>
+
+        <!-- 裸车价 -->
+        <div class="input-row">
+          <label for="carPrice">裸车价</label>
+          <div class="input-right">
+            <div class="input-wrap">
+              <span class="yuan">¥</span>
+              <input type="number" id="carPrice" placeholder="0" inputmode="decimal">
+            </div>
+            <div class="input-hint hint-green" id="discountHint"></div>
+          </div>
+        </div>
+
+        <!-- 购置税（自动计算） -->
+        <div class="readonly-row">
+          <span class="readonly-label">
+            购置税
+            <span class="badge">÷ 11.3 自动</span>
+          </span>
+          <span class="readonly-value" id="taxDisplay">¥0.00</span>
+        </div>
+
+        <!-- 保险费 -->
+        <div class="input-row">
+          <label for="insurance">保险费</label>
+          <div class="input-right">
+            <div class="input-wrap">
+              <span class="yuan">¥</span>
+              <input type="number" id="insurance" placeholder="0" inputmode="decimal">
+            </div>
+            <div class="input-hint hint-sub" id="insuranceHint"></div>
+          </div>
+        </div>
+
+        <!-- 上牌费 -->
+        <div class="input-row">
+          <label for="licenseFee">上牌费</label>
+          <div class="input-right">
+            <div class="input-wrap">
+              <span class="yuan">¥</span>
+              <input type="number" id="licenseFee" placeholder="0" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+
+        <!-- 装饰费 -->
+        <div class="input-row">
+          <label for="decoration">装饰费</label>
+          <div class="input-right">
+            <div class="input-wrap">
+              <span class="yuan">¥</span>
+              <input type="number" id="decoration" placeholder="0" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 贷款开关 -->
+      <div class="loan-card">
+        <div class="loan-row">
+          <span class="loan-label">是否贷款</span>
+          <label class="toggle">
+            <input type="checkbox" id="loanSwitch">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="loan-note" id="loanNote">
+          贷款 ¥200,000，第二年提前还款<br>额外利息 ¥12,000
+        </div>
+      </div>
+
+      <!-- 保存按钮 -->
+      <button class="save-btn" onclick="openSaveModal()">保存本次报价</button>
+
+    </div>
+
+    <!-- ── 报价记录 Tab ── -->
+    <div class="tab-panel" id="panel-quotes">
+      <div class="quotes-header">
+        <div class="section-label" style="margin:0">共 <span id="quotes-total">0</span> 条记录</div>
+        <button class="clear-all-btn" onclick="clearAll()">清空全部</button>
+      </div>
+      <div id="quotes-list"></div>
+    </div>
+
+  </div>
+
+  <!-- 底部结果栏（仅计算 Tab 显示） -->
+  <div class="result-bar" id="result-bar">
+    <div class="result-grid">
+      <div class="result-item"><span>裸车价</span><span id="r-car">¥0</span></div>
+      <div class="result-item"><span>购置税</span><span id="r-tax">¥0</span></div>
+      <div class="result-item"><span>保险费</span><span id="r-ins">¥0</span></div>
+      <div class="result-item"><span>上牌费</span><span id="r-lic">¥0</span></div>
+      <div class="result-item"><span>装饰费</span><span id="r-dec">¥0</span></div>
+      <div class="result-item loan-item" id="r-loan-item" style="visibility:hidden"><span>贷款利息</span><span id="r-loan">¥12,000</span></div>
+    </div>
+    <div class="result-divider"></div>
+    <div class="result-total">
+      <span class="result-total-label">落地总价</span>
+      <span class="result-total-value" id="r-total">¥0</span>
+    </div>
+  </div>
+
+  <!-- 保存弹窗 -->
+  <div class="modal-overlay" id="saveModal" onclick="closeSaveModal(event)">
+    <div class="modal">
+      <div class="modal-title">保存报价</div>
+      <input class="modal-input" type="text" id="modalDealerName" placeholder="4S 店名称（如：北京星德宝）" maxlength="20">
+      <input class="modal-input" type="text" id="modalNote" placeholder="备注（可选，如：销售：张三）" maxlength="30">
+      <div class="modal-btns">
+        <button class="modal-btn cancel" onclick="closeSaveModal()">取消</button>
+        <button class="modal-btn confirm" onclick="saveQuote()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let OFFICIAL = 324600;
+    const LOAN_INTEREST = 12000;
+    const QUOTES_KEY = 'mb_quotes_v3';
+    const CUSTOM_MODELS_KEY = 'mb_custom_models_v1';
+    const CURRENT_MODEL_KEY = 'mb_current_model_v1';
+
+    const BUILT_IN_MODELS = [
+      { name: 'C260L 运动轿车经典版', price: 299900 },
+      { name: 'C260L 运动轿车', price: 324600 },
+      { name: 'C260L 运动轿车特别版', price: 321600 },
+      { name: 'C260L 皓夜运动轿车', price: 345600 },
+    ];
+
+    const fmt = n => '¥' + n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtPrice = n => '¥' + n.toLocaleString('zh-CN');
+    const fmtShort = n => {
+      if (n === 0) return '¥0';
+      if (n >= 10000) return '¥' + (n / 10000).toFixed(2) + '万';
+      return '¥' + n.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    };
+    const val = id => parseFloat(document.getElementById(id).value) || 0;
+
+    // ── 车型管理 ──
+    function loadInitialModel() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(CURRENT_MODEL_KEY));
+        if (saved && saved.name && saved.price) {
+          updateModel(saved.name, saved.price);
+          return;
+        }
+      } catch {}
+      // Fallback to a default built-in model
+      const defaultModel = BUILT_IN_MODELS.find(m => m.price === 324600) || BUILT_IN_MODELS[1];
+      updateModel(defaultModel.name, defaultModel.price);
+    }
+
+    function getCustomModels() {
+      try {
+        return JSON.parse(localStorage.getItem(CUSTOM_MODELS_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveCustomModels(models) {
+      localStorage.setItem(CUSTOM_MODELS_KEY, JSON.stringify(models));
+    }
+
+    function populateModelList() {
+      const container = document.getElementById('modelListContainer');
+      const customModels = getCustomModels();
+      const allModels = [...customModels, ...BUILT_IN_MODELS];
+
+      container.innerHTML = allModels.map((model, index) => {
+        const isCustom = index < customModels.length;
+        return `
+          <div class="model-item ${isCustom ? 'custom' : ''}" onclick="selectModel(event, '${model.name}', ${model.price})">
+            <div class="model-item-info">
+              <span class="model-item-name">${model.name}</span>
+              <span class="model-item-price">${fmtPrice(model.price)}</span>
+            </div>
+            ${isCustom 
+              ? `<span class="model-item-badge">自定义</span><span class="model-item-delete" onclick="deleteCustomModel(event, '${model.name}')">×</span>`
+              : '<span class="model-item-badge">内置</span>'
+            }
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function selectModel(event, name, price) {
+        // Stop propagation to prevent the delete button from triggering this
+        if (event.target.classList.contains('model-item-delete')) {
+            event.stopPropagation();
+            return;
+        }
+        document.getElementById('modalModelName').value = name;
+        document.getElementById('modalModelPrice').value = price;
+    }
+
+    function deleteCustomModel(event, name) {
+        event.stopPropagation();
+        if (confirm(`确定要删除自定义车型 "${name}" 吗？`)) {
+            let models = getCustomModels();
+            models = models.filter(m => m.name !== name);
+            saveCustomModels(models);
+            populateModelList(); // Refresh the list
+        }
+    }
+
+    function openModelModal() {
+      populateModelList();
+      const currentName = document.querySelector('.header-model').textContent;
+      const currentPrice = OFFICIAL;
+      document.getElementById('modalModelName').value = currentName;
+      document.getElementById('modalModelPrice').value = currentPrice;
+      document.getElementById('modelModal').classList.add('show');
+      setTimeout(() => document.getElementById('modalModelName').focus(), 300);
+    }
+
+    function closeModelModal(e) {
+      if (!e || e.target === document.getElementById('modelModal')) {
+        document.getElementById('modelModal').classList.remove('show');
+      }
+    }
+
+    function saveModel() {
+      const name = document.getElementById('modalModelName').value.trim();
+      const price = parseFloat(document.getElementById('modalModelPrice').value);
+
+      if (!name || !price || price <= 0) {
+        alert('请输入有效的车型名称和指导价');
+        return;
+      }
+      
+      updateModel(name, price);
+      localStorage.setItem(CURRENT_MODEL_KEY, JSON.stringify({ name, price }));
+
+      // Save to custom models list if it's not a built-in one
+      const isBuiltIn = BUILT_IN_MODELS.some(m => m.name === name && m.price === price);
+      if (!isBuiltIn) {
+        let customModels = getCustomModels();
+        const existingIndex = customModels.findIndex(m => m.name === name);
+        if (existingIndex > -1) {
+          customModels[existingIndex].price = price; // Update price if name exists
+        } else {
+          customModels.unshift({ name, price }); // Add as new
+        }
+        saveCustomModels(customModels);
+      }
+
+      closeModelModal();
+      calc();
+    }
+
+    function updateModel(name, price) {
+      OFFICIAL = price;
+      document.querySelector('.header-model').textContent = name;
+      document.querySelector('.header-price-value').textContent = fmtPrice(price);
+    }
+
+    // ── 计算逻辑 ──
+    function getCalcResult() {
+      const car = val('carPrice');
+      const ins = val('insurance');
+      const lic = val('licenseFee');
+      const dec = val('decoration');
+      const hasLoan = document.getElementById('loanSwitch').checked;
+      const tax = Math.round(car / 11.3 * 100) / 100;
+      const loan = hasLoan ? LOAN_INTEREST : 0;
+      const total = car + tax + ins + lic + dec + loan;
+      return { car, ins, lic, dec, hasLoan, tax, loan, total };
+    }
+
+    function calc() {
+      const { car, ins, lic, dec, hasLoan, tax, loan, total } = getCalcResult();
+
+      document.getElementById('taxDisplay').textContent = car > 0 ? fmt(tax) : '¥0.00';
+
+      const dHint = document.getElementById('discountHint');
+      if (car > 0 && OFFICIAL > 0) {
+        const ratio = ((OFFICIAL - car) / OFFICIAL * 100).toFixed(2);
+        const save = OFFICIAL - car;
+        dHint.textContent = `优惠比例 ${ratio}%，节省 ${fmt(save)}`;
+      } else {
+        dHint.textContent = '';
+      }
+
+      const iHint = document.getElementById('insuranceHint');
+      if (ins > 0 && car > 0) {
+        iHint.textContent = `占裸车价 ${(ins / car * 100).toFixed(2)}%`;
+      } else {
+        iHint.textContent = '';
+      }
+
+      document.getElementById('loanNote').classList.toggle('show', hasLoan);
+      document.getElementById('r-loan-item').style.visibility = hasLoan ? 'visible' : 'hidden';
+
+      document.getElementById('r-car').textContent = fmtShort(car);
+      document.getElementById('r-tax').textContent = fmtShort(tax);
+      document.getElementById('r-ins').textContent = fmtShort(ins);
+      document.getElementById('r-lic').textContent = fmtShort(lic);
+      document.getElementById('r-dec').textContent = fmtShort(dec);
+      document.getElementById('r-total').textContent = fmt(total);
+    }
+
+    // 当用户手动修改价格时，清除当前编辑的 quote id，避免覆盖
+    function clearCurrentQuoteId() {
+      document.getElementById('currentQuoteId').value = '';
+    }
+
+    ['carPrice', 'insurance', 'licenseFee', 'decoration'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        clearCurrentQuoteId();
+        calc();
+      });
+    });
+    document.getElementById('loanSwitch').addEventListener('change', () => {
+      clearCurrentQuoteId();
+      calc();
+    });
+    calc();
+
+    // ── Tab 切换 ──
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        b.classList.toggle('active', (i === 0) === (tab === 'calc'));
+      });
+      document.getElementById('panel-calc').classList.toggle('active', tab === 'calc');
+      document.getElementById('panel-quotes').classList.toggle('active', tab === 'quotes');
+      document.getElementById('result-bar').style.display = tab === 'calc' ? '' : 'none';
+      if (tab === 'quotes') renderQuotes();
+    }
+
+    // ── 本地存储 ──
+    function loadQuotes() {
+      try { return JSON.parse(localStorage.getItem(QUOTES_KEY)) || []; }
+      catch { return []; }
+    }
+    function saveQuotes(quotes) {
+      localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
+      updateQuoteCount();
+    }
+    function updateQuoteCount() {
+      const n = loadQuotes().length;
+      document.getElementById('quote-count').textContent = n > 0 ? `(${n})` : '';
+      document.getElementById('quotes-total').textContent = n;
+    }
+
+    // ── 保存弹窗 ──
+    function openSaveModal() {
+      const dealer = document.getElementById('dealerName').value.trim();
+      document.getElementById('modalDealerName').value = dealer;
+      document.getElementById('modalNote').value = '';
+      document.getElementById('saveModal').classList.add('show');
+      setTimeout(() => document.getElementById('modalDealerName').focus(), 300);
+    }
+    function closeSaveModal(e) {
+      if (!e || e.target === document.getElementById('saveModal')) {
+        document.getElementById('saveModal').classList.remove('show');
+      }
+    }
+    function saveQuote() {
+      const quotes = loadQuotes();
+      const name = document.getElementById('modalDealerName').value.trim() || '未命名 4S 店';
+      const note = document.getElementById('modalNote').value.trim();
+      const { car, ins, lic, dec, hasLoan, tax, loan, total } = getCalcResult();
+
+      if (car === 0) {
+        alert('请先填写裸车价');
+        return;
+      }
+
+      const currentId = parseInt(document.getElementById('currentQuoteId').value);
+      const modelName = document.querySelector('.header-model').textContent;
+      const modelPrice = OFFICIAL;
+
+      if (currentId) {
+        // 更新现有报价
+        const index = quotes.findIndex(q => q.id === currentId);
+        if (index > -1) {
+          quotes[index] = {
+            ...quotes[index], // 保留旧信息，如创建日期
+            id: currentId,
+            modelName, modelPrice,
+            name, note,
+            car, ins, lic, dec, hasLoan, tax, loan, total,
+            discount: OFFICIAL > 0 ? ((OFFICIAL - car) / OFFICIAL * 100).toFixed(2) : 0,
+            date: new Date().toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+          };
+        }
+      } else {
+        // 新增报价
+        quotes.unshift({
+          id: Date.now(),
+          modelName, modelPrice,
+          name, note,
+          car, ins, lic, dec, hasLoan, tax, loan, total,
+          discount: OFFICIAL > 0 ? ((OFFICIAL - car) / OFFICIAL * 100).toFixed(2) : 0,
+          date: new Date().toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        });
+      }
+      saveQuotes(quotes);
+      closeSaveModal();
+      switchTab('quotes');
+    }
+
+    // ── 渲染报价列表 ──
+    function renderQuotes() {
+      const quotes = loadQuotes();
+      const list = document.getElementById('quotes-list');
+      document.getElementById('quotes-total').textContent = quotes.length;
+
+      if (quotes.length === 0) {
+        list.innerHTML = `<div class="empty-state"><div class="empty-icon">🏪</div>暂无报价记录<br>在计算页填写后点击「保存本次报价」</div>`;
+        return;
+      }
+
+      // 按车型分组
+      const groupedQuotes = quotes.reduce((acc, q) => {
+        const modelKey = q.modelName || '未知车型';
+        if (!acc[modelKey]) {
+          acc[modelKey] = {
+            price: q.modelPrice,
+            quotes: []
+          };
+        }
+        acc[modelKey].quotes.push(q);
+        return acc;
+      }, {});
+
+      // 找出所有报价中的最低总价
+      const minTotal = Math.min(...quotes.map(q => q.total));
+
+      list.innerHTML = Object.entries(groupedQuotes).map(([modelName, group]) => {
+        const groupHtml = group.quotes.map(q => `
+          <div class="quote-card ${q.total === minTotal ? 'best' : ''}">
+            <div class="quote-head">
+              <div>
+                <div class="quote-name-row">
+                  <span class="quote-name">${q.name}</span>
+                  <span class="best-badge">最低价</span>
+                </div>
+                ${q.note ? `<div style="font-size:12px;color:var(--sub);margin-top:3px">${q.note}</div>` : ''}
+              </div>
+              <div>
+                <div class="quote-total">${fmt(q.total)}</div>
+                <div class="quote-date">${q.date}</div>
+              </div>
+            </div>
+            <div class="quote-details">
+              <div class="quote-detail-item">
+                <div class="quote-detail-label">裸车价</div>
+                <div class="quote-detail-value">${fmtShort(q.car)}</div>
+              </div>
+              <div class="quote-detail-item">
+                <div class="quote-detail-label">优惠比例</div>
+                <div class="quote-detail-value discount">${q.discount}%</div>
+              </div>
+              <div class="quote-detail-item">
+                <div class="quote-detail-label">购置税</div>
+                <div class="quote-detail-value">${fmtShort(q.tax)}</div>
+              </div>
+              <div class="quote-detail-item">
+                <div class="quote-detail-label">保险费</div>
+                <div class="quote-detail-value">${fmtShort(q.ins)}</div>
+              </div>
+              <div class="quote-detail-item">
+                <div class="quote-detail-label">上牌+装饰</div>
+                <div class="quote-detail-value">${fmtShort(q.lic + q.dec)}</div>
+              </div>
+              <div class="quote-detail-item">
+                <div class="quote-detail-label">贷款利息</div>
+                <div class="quote-detail-value" style="${q.hasLoan ? 'color:var(--gold)' : ''}">${q.hasLoan ? fmtShort(q.loan) : '—'}</div>
+              </div>
+            </div>
+            <div class="quote-actions">
+              <button class="quote-action-btn" onclick="loadQuote(${q.id})">载入计算</button>
+              <button class="quote-action-btn" onclick="deleteQuote(${q.id})">删除</button>
+            </div>
+          </div>
+        `).join('');
+
+        return `
+          <div class="quote-group">
+            <div class="quote-group-header">
+              ${modelName}
+              <span>指导价 ${fmtPrice(group.price || 0)}</span>
+            </div>
+            ${groupHtml}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ── 载入报价到计算页 ──
+    function loadQuote(id) {
+      const q = loadQuotes().find(q => q.id === id);
+      if (!q) return;
+
+      // 载入车型信息
+      if (q.modelName && q.modelPrice) {
+        updateModel(q.modelName, q.modelPrice);
+        localStorage.setItem(CURRENT_MODEL_KEY, JSON.stringify({ name: q.modelName, price: q.modelPrice }));
+      }
+      
+      document.getElementById('dealerName').value = q.name;
+      document.getElementById('carPrice').value = q.car || '';
+      document.getElementById('insurance').value = q.ins || '';
+      document.getElementById('licenseFee').value = q.lic || '';
+      document.getElementById('decoration').value = q.dec || '';
+      document.getElementById('loanSwitch').checked = q.hasLoan;
+      document.getElementById('currentQuoteId').value = q.id;
+      calc();
+      switchTab('calc');
+    }
+
+    // ── 删除 ──
+    function deleteQuote(id) {
+      const quotes = loadQuotes().filter(q => q.id !== id);
+      saveQuotes(quotes);
+      renderQuotes();
+    }
+    function clearAll() {
+      if (confirm('确定清空所有报价记录？')) {
+        saveQuotes([]);
+        renderQuotes();
+      }
+    }
+
+    loadInitialModel();
+    updateQuoteCount();
+  </script>
+</body>
+</html>
